@@ -1,0 +1,469 @@
+<!DOCTYPE HTML> 
+<html lang="en"> 
+<head>
+<title>COMP4431 Game 3</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"> 
+<meta http-equiv="Content-Language" content="en-us"> 
+<link href='http://fonts.googleapis.com/css?family=Erica+One' rel='stylesheet' type='text/css'>
+<link href='http://fonts.googleapis.com/css?family=Ubuntu' rel='stylesheet' type='text/css'>
+<script src="sprite.js"></script>
+<script src="input.js"></script>
+<script src="resources.js"></script>
+<script src="entity.js"></script>
+<script src="unit conf.js"></script>
+<script src="playerstat.js"></script>
+<script src="skills.js"></script>
+<script src="button.js"></script>
+
+<script src="http://cdn.peerjs.com/0.3/peer.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+<script src="p2p.js"></script>
+<script>
+
+var canvaswidth = 1100;
+var canvasheight = 800;
+var trampolineheight = 600;
+var debugmode = true;
+var requestAnimFrame = (function(){
+    return window.requestAnimationFrame       ||
+        window.webkitRequestAnimationFrame ||
+        window.mozRequestAnimationFrame    ||
+        window.oRequestAnimationFrame      ||
+        window.msRequestAnimationFrame     ||
+        function(callback){
+            window.setTimeout(callback, 1000 / 60);
+        };
+})();
+
+var canvas;
+var context;
+var then;
+var playernumber = 0;
+var hero;
+var roundover = false;
+var imagerdy = false;
+
+var init = function() {
+
+	if(!imagerdy){
+		console.log('!imagerdy ' + imagerdy);
+		setTimeout( init, 1000 );
+		return;
+	}
+	if (playernumber == 1) {
+		hero = new Hero(300,1);
+		enemyhero = new Hero(500,2);
+	}
+	else if(playernumber == 2) {
+		enemyhero = new Hero(300,1);
+		hero = new Hero(500,2);
+	} else {
+	}
+	
+	realw = hero.w;
+	realh = hero.h;
+	
+	document.getElementById('playerstatus').style.display = 'none';
+	//bg music
+	if (!bgstart){
+		bgstart = true;
+		bgaudio.play();
+		bgaudio.addEventListener('ended', function() {
+			this.currentTime = 0;
+			this.play();
+		}, false);
+	}
+    canvas  = document.getElementById("game");
+    context = canvas.getContext('2d');   
+	canvas.addEventListener("click", onMouseClick, false);
+    canvas.addEventListener("mousemove", onMouseOver, false);
+
+	then = Date.now();
+	setTimeout(roundtimerfunc, 1000);
+	main();
+
+}
+roundtimer = 30;
+var roundtimerfunc = function(){
+	roundtimer--;
+	console.log(roundtimer);
+	if (!roundover) {
+		if (roundtimer <= 0) {
+			roundover = true;
+			roundtimer = 20;
+		}
+		setTimeout(roundtimerfunc, 1000);
+
+	} else {
+		if (roundtimer <= 0) {
+			roundover = false;
+			roundtimer = 30;
+		}
+		setTimeout(roundtimerfunc, 1000);
+	}
+}
+
+resources.onReady(function(){
+	imagerdy = true;
+	console.log('imagerdy = true');
+});
+
+var stationary = 0;
+var rotateAngle = function(dir, to){
+	var a;
+	var dt = 90;
+	//console.log(dir);
+	if (dir == to) return 0;
+	
+	if (to == 0) {
+		if (dir >= 0 && dir < 180) a = -dt;		
+		else a = dt;
+	} else if (to == 180) {
+		if (dir >= 0 && dir < 180) a = dt;		
+		else a = -dt;
+	} else if (to == 90) {
+		if ((dir >= 270 && dir < 90) || (dir >= 0 && dir < 90)) a = dt;		
+		else a = -dt;
+	} else if (to == 270) {
+		if (dir <= 270 && dir > 90) a = dt;		
+		else a = -dt;
+	}	
+	return a;
+};
+
+
+
+//configurables
+var weight = 6;
+var gravity = 10;
+var turnrate = 100;
+var deccel = 10;
+var bungerate = 600;
+var parasolon = false;
+
+var score = 0;
+var opscore = 0;
+var opcoins = 0;
+var coins = 0;
+
+var direction = 'STOP';
+var currspeed =0;
+
+var rabbit = new Sprite(4,'images/rabbit.png',0, [[95,70]],[100,145],false);
+var sheep = new Sprite(1, 'images/sheep.png',0,[[10,55]],[800,710], false);
+var cactus = new Sprite(5, 'images/cactus.png',0,[[110,50]],[210,400], false);
+var battleship1 = new Sprite(2,'images/blue1.png',0,[[0,0]],[261,378], false);
+var battleship2 = new Sprite(3,'images/ship2.png', 0,[[0,0]],[85,85],false)
+var coinframes = [[0,0],[50,0],[100,0],[150,0],[200,0],[250,0],[300,0],[350,0],[400,0],[450,0]]
+var coin = new Sprite(1,'images/coin.png',6,coinframes,[50,50], false);
+var gem = new Sprite(6,'images/gem.png',6,[[0,0]],[100,80], false)
+
+hero = new Hero(300,1);
+enemyhero = new Hero(500,2);
+
+var coin1 = new Projectile(1,1, 600,600);
+var coin2 = new Projectile(2,2, 500,550);
+var coin3 = new Projectile(3,2, 600,300);
+var coin4 = new Projectile(4,3, 400,400);
+
+
+function CheckCollision(){
+	var w1 = hero.w;
+	var h1 = hero.h;
+	var w2 = enemyhero.w;
+	var h2 = enemyhero.h;
+	var x1 = hero.x - w1/2;
+	var x2 = enemyhero.x - w2/2;
+	var y1 = hero.y - h1/2;
+	var y2 = enemyhero.y -  h2/2;
+	
+	if (x1 <= x2+w2 && x1+w1 >= x2 && y1 <= y2+w2 && y1+h1 >= y2) return true;
+	return false;	
+}
+
+var audio = new Audio('assets/boing.m4a');
+var outaudio = new Audio('assets/switch.mp3');
+var bgaudio = new Audio('assets/caketown.mp3');
+audio.volume = 0.1;
+outaudio.volume = 0.2;
+audio.volume = 0.1;
+outaudio.volume = 0.2;
+bgaudio.volume = 0.05;
+var bgstart = false;
+
+var update = function(){	
+	if (input.isDown('DOWN') && direction== 'STOP'){ // start jumping
+		direction = 'UP';
+		currspeed = bungerate;
+	}
+
+	if (direction == 'UP') {	
+		currspeed -= deccel;
+		if (currspeed <= 0) currspeed = 0;
+		hero.y -= currspeed * delta;
+		
+	} else if (direction == 'DOWN'){
+		var droprate = weight+gravity;
+		if (upgradetoggles[parasolindex]) droprate *= 0.4;
+		currspeed += droprate;
+		hero.y += currspeed * delta;
+	}
+
+	if (CheckCollision() && direction != 'STOP'){
+		if (hero.y <= enemyhero.y) {
+			direction = 'UP';
+			currspeed = bungerate;
+			audio.play(); 
+		} else if (hero.y >= enemyhero.y) {
+			direction = 'DOWN';
+			currspeed = 0;
+		}
+	} else if ((hero.y >= trampolineheight + (150-hero.h/2) && direction == 'DOWN')){
+		//check boundaries
+		if (hero.x < 200 || hero.x > canvaswidth-200){
+			console.log('out');
+			direction = 'STOP';
+			hero.x = (playernumber * 200)+250;
+			hero.y = trampolineheight + (150-hero.h/2);
+			currspeed = 0;
+			outaudio.play(); 
+		} else {
+			direction = 'UP';
+			currspeed = bungerate;
+			audio.play(); 
+		
+		}
+		lockup = true;
+		
+	} else if ((hero.y <= 50|| currspeed <= 0) && direction =='UP' ){
+		direction = 'DOWN';
+		currspeed = 0;
+	}
+	
+	function outofbounds(x){
+		return (hero.x < 200 || hero.x > canvaswidth-200)
+	}
+	
+	//console.log(' ' + currspeed + ' ' + hero.y + ' ' + direction);
+	
+	if (input.isDown('LEFT') && hero.x > hero.w/2){ // Player holding left
+		var temp = hero.x;
+		hero.x -= turnrate * delta;
+		hero.x = Math.round(hero.x);
+		if (CheckCollision() || (outofbounds(hero.x)) && direction =='STOP') {
+			hero.x = temp;
+		}
+	}
+	if (input.isDown('RIGHT') && hero.x < canvaswidth-hero.w/2) { // Player holding right
+		var temp = hero.x;
+		hero.x += turnrate * delta;
+		hero.x = Math.round(hero.x);
+		if (CheckCollision() || (outofbounds(hero.x) && direction =='STOP')){
+			hero.x = temp;
+		}
+	}
+	doFunction(function(c){
+			//console.log('do function' + hero.w + ' ' + hero.h);
+			var msg = {
+				type: POSITION,
+				data: 1,
+				x: hero.x,
+				y: hero.y,
+				w: hero.w,
+				h: hero.h,
+			};
+			c.send(msg);
+	});
+	
+	//check coin collision
+	checkObjectCollision();
+	//safety bounds 
+	if (hero.y >= canvasheight + 50 || hero.y <= -50){
+			console.log('out');
+			direction = 'STOP';
+			hero.x = (playernumber * 200);
+			hero.y = canvasheight-50;
+			currspeed = 0;
+	}
+}
+
+var w = window;
+requestAnimationFrame = w.requestAnimationFrame || w.webkitRequestAnimationFrame || w.msRequestAnimationFrame || w.mozRequestAnimationFrame;
+
+var delta;
+var now;
+var main = function(){
+	now = Date.now();
+	delta = (now - then)/1000.0;
+	//console.log(delta);
+	if (hero){
+		update();
+	}
+	render();
+	then = now;
+	requestAnimationFrame(main);
+	if (roundover){
+		menu();
+	}
+}
+
+var render = function(){
+	//console.log('rendering');	
+	context.clearRect(0,0,1100,canvasheight);
+	//context.drawImage(resources.get('images/galaxy.jpg'),0, 0,canvaswidth, canvasheight);
+	context.strokeStyle = "blue";
+	context.strokeRect(0,0,canvaswidth,canvasheight);
+	//context.drawImage(resources.get('images/bg.png'),0, 0,canvaswidth, canvasheight);
+	context.drawImage(resources.get('images/trampoline.png'),100, 700,canvaswidth-200, 150);
+	if (hero){
+		RenderHero();
+		RenderProjectile();
+	}
+	renderUI();
+}
+
+function drawHeading(text,size, x,y){
+	context.font= size+"px Erica One";
+	context.lineWidth = "2";
+	context.fillStyle ="yellow";
+	context.fillText(text,x,y);
+	context.strokeStyle = "orange";
+	context.strokeText(text,x,y);
+}
+
+function wrapText(text,x,y){
+	var maxWidth = 700;
+	var lineHeight = 25;
+	//console.log(text);
+	var words = text.split(' ');
+    var line = '';
+	var x = 728;
+	var y = 500
+	for(var n = 0; n < words.length; n++) {
+	  var testLine = line + words[n] + ' ';
+	  var metrics = context.measureText(testLine);
+	  var testWidth = metrics.width;
+	  if (testWidth > maxWidth && n > 0) {
+		context.font= "16px Ubuntu";
+		context.fillText(line, x, y);
+		line = words[n] + ' ';
+		y += lineHeight;
+	  }
+	  else {
+		line = testLine;
+	  }
+	}
+	context.font= "16px Ubuntu";
+	context.fillText(line, x, y);
+}
+
+var menu = function(){
+	context.drawImage(resources.get('images/panel.png'),680,100, 400,600);
+	drawHeading('Weight', 30, 825,150);
+	context.fillStyle ="grey";
+	context.fillRect(725,167, 300, 20);
+	context.fillStyle ="red";
+	var w = weight/15*300
+	context.fillRect(725,167, w, 20);
+	wrapText(textdesc);
+}
+
+var renderUI = function(){
+	//fuel bar
+	//context.fillStyle = 'grey';
+	var y = canvasheight -30;
+	drawHeading('Coins: '+coins, 20, 20,80);
+	drawHeading('Score:  '+score, 30, 20,50);
+	drawHeading('Enemy:  '+opscore, 30, 900,50);
+	drawHeading('0:' + roundtimer, 56, 500,50);
+	//context.fillStyle = grd;
+	//context.fillRect(10,y,fuel,25);	
+
+}	
+
+var Sequence = [0,1,2];
+var currSequence = 0;
+
+function overButton(x, y){
+	if (x >= 720 && y >= 240){
+		var modx = x-720;
+		var mody = y-240;
+		modx = Math.floor(modx/65);
+		mody = Math.floor(mody/65);
+		//console.log(mody*5 +modx);
+		return mody*5 +modx+1;
+	}
+}
+
+var textdesc = "";
+
+var realweight = weight;
+var realbungerate = bungerate;
+var realdeccel = deccel;
+var realturnrate = turnrate;
+var realw;
+var realh;
+
+function onMouseOver(e){
+	var x;
+    var y;
+    if (e.pageX || e.pageY) {
+	  x = e.pageX;
+      y = e.pageY;
+    }
+    else {
+      x = e.clientX + document.body.scrollLeft +
+           document.documentElement.scrollLeft;
+      y = e.clientY + document.body.scrollTop +
+           document.documentElement.scrollTop;
+    }
+	
+	x -= canvas.offsetLeft;
+	y -= canvas.offsetTop;
+
+	if (roundover){
+		setfocus(overButton(x,y));
+	}
+}
+
+
+function onMouseClick(e){
+	var x;
+    var y;
+    if (e.pageX || e.pageY) {
+      x = e.pageX;
+      y = e.pageY;
+    }
+    else {
+      x = e.clientX + document.body.scrollLeft +
+           document.documentElement.scrollLeft;
+      y = e.clientY + document.body.scrollTop +
+           document.documentElement.scrollTop;
+    }
+	x -= canvas.offsetLeft;
+	y -= canvas.offsetTop;
+		
+	var button = overButton(x,y);
+	if (button && roundover){
+		console.log('clicked button ' + button);
+		if (button == brickindex) {
+			dobrick();
+		};
+	}	
+}
+
+</script>
+</head> 
+ 
+<body> 	
+	<!--<h1>Game 3</h1>-->
+	<img src="images/bg.png" alt="rainbows!" width="1100" height="800"  style="position:absolute; left:0px; top:0;">
+	<canvas id='game' width ="1100" height = "800"style="position:absolute; left:0px; top:0;">Browser not supported. Use Chrome!</canvas>
+	
+	<div id='playerstatus' style="position:absolute; left:450px; top:400px;">
+		Connecting to p2p lobby...<br>
+	<br><span id="status" style="color:red"></span>
+	</div>
+	
+</body> 
+</html> 
