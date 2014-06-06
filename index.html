@@ -40,16 +40,15 @@ var context;
 var then;
 var playernumber = 0;
 var hero;
-var roundover = false;
+var roundover = true;
 var imagerdy = false;
 
 var init = function() {
 
-	if(!imagerdy){
-		console.log('!imagerdy ' + imagerdy);
-		setTimeout( init, 1000 );
-		return;
-	}
+	//if(!imagerdy){
+		//console.log('!imagerdy ' + imagerdy);
+		//setTimeout( init, 2000 );
+	//}
 	if (playernumber == 1) {
 		hero = new Hero(300,1);
 		enemyhero = new Hero(500,2);
@@ -83,7 +82,7 @@ var init = function() {
 	main();
 
 }
-roundtimer = 30;
+roundtimer = 90;
 var roundtimerfunc = function(){
 	roundtimer--;
 	console.log(roundtimer);
@@ -98,6 +97,7 @@ var roundtimerfunc = function(){
 		if (roundtimer <= 0) {
 			roundover = false;
 			roundtimer = 30;
+			resetStats();
 		}
 		setTimeout(roundtimerfunc, 1000);
 	}
@@ -106,6 +106,7 @@ var roundtimerfunc = function(){
 resources.onReady(function(){
 	imagerdy = true;
 	console.log('imagerdy = true');
+	imagerdy = true;
 });
 
 var stationary = 0;
@@ -147,35 +148,47 @@ var opcoins = 0;
 var coins = 0;
 
 var direction = 'STOP';
-var currspeed =0;
+var currspeed = 0;
 
 var rabbit = new Sprite(4,'images/rabbit.png',0, [[95,70]],[100,145],false);
 var sheep = new Sprite(1, 'images/sheep.png',0,[[10,55]],[800,710], false);
-var cactus = new Sprite(5, 'images/cactus.png',0,[[110,50]],[210,400], false);
+var cactus = new Sprite(5, 'images/cactus2.png',0,[[0,0]],[420,460], false);
 var battleship1 = new Sprite(2,'images/blue1.png',0,[[0,0]],[261,378], false);
 var battleship2 = new Sprite(3,'images/ship2.png', 0,[[0,0]],[85,85],false)
 var coinframes = [[0,0],[50,0],[100,0],[150,0],[200,0],[250,0],[300,0],[350,0],[400,0],[450,0]]
-var coin = new Sprite(1,'images/coin.png',6,coinframes,[50,50], false);
+var coinsprite = new Sprite(1,'images/coin.png',6,coinframes,[50,50], false);
 var gem = new Sprite(6,'images/gem.png',6,[[0,0]],[100,80], false)
 
 hero = new Hero(300,1);
 enemyhero = new Hero(500,2);
 
-var coin1 = new Projectile(1,1, 600,600);
-var coin2 = new Projectile(2,2, 500,550);
-var coin3 = new Projectile(3,2, 600,300);
-var coin4 = new Projectile(4,3, 400,400);
+var GEM = 1;
+var COIN = 2
+var CACTUS = 3;
+var CACTUSEFFECT = 4;
+
+var objects = 50;
+for (objs = 0; objs < objects ; objs += 3){
+	var coisfn = new Projectile(objs,COIN, 500,550);
+	var gsfde = new Projectile(objs+1,CACTUS, 600,300);
+	var sdf= new Projectile(objs+2,GEM, 600,600);
+}
 
 
-function CheckCollision(){
-	var w1 = hero.w;
-	var h1 = hero.h;
-	var w2 = enemyhero.w;
-	var h2 = enemyhero.h;
-	var x1 = hero.x - w1/2;
-	var x2 = enemyhero.x - w2/2;
-	var y1 = hero.y - h1/2;
-	var y2 = enemyhero.y -  h2/2;
+function CheckCollision(o1, o2){
+	if (!o1 && !o2){
+		o1 = hero;
+		o2 = enemyhero;
+		//console.log('check default collision');
+	}
+	var w1 = o1.w;
+	var h1 = o1.h;
+	var w2 = o2.w;
+	var h2 = o2.h;
+	var x1 = o1.x - w1/2;
+	var y1 = o1.y - h1/2;
+	var x2 = o2.x - w2/2;
+	var y2 = o2.y -  h2/2;
 	
 	if (x1 <= x2+w2 && x1+w1 >= x2 && y1 <= y2+w2 && y1+h1 >= y2) return true;
 	return false;	
@@ -359,12 +372,12 @@ function wrapText(text,x,y){
 
 var menu = function(){
 	context.drawImage(resources.get('images/panel.png'),680,100, 400,600);
-	drawHeading('Weight', 30, 825,150);
-	context.fillStyle ="grey";
-	context.fillRect(725,167, 300, 20);
+	//drawHeading('Weight', 30, 825,150);
+	//context.fillStyle ="grey";
+	//context.fillRect(725,167, 300, 20);
 	context.fillStyle ="red";
-	var w = weight/15*300
-	context.fillRect(725,167, w, 20);
+	//var w = weight/15*300
+	//context.fillRect(725,167, w, 20);
 	wrapText(textdesc);
 }
 
@@ -446,9 +459,8 @@ function onMouseClick(e){
 	var button = overButton(x,y);
 	if (button && roundover){
 		console.log('clicked button ' + button);
-		if (button == brickindex) {
-			dobrick();
-		};
+		setClicked(button);
+
 	}	
 }
 

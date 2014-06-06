@@ -14,7 +14,8 @@ resources.load([
 	'images/gem.png',
 	'images/cactus.png',
 	'images/trampoline.png',
-	'images/bg.png'
+	'images/bg.png',
+	'images/cactus2.png'
 ]);
 
 //=======================

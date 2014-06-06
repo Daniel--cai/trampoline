@@ -1,6 +1,7 @@
 var CONNECTION = 0;
 var POSITION = 1;
 var PROJECTILE = 2;
+var SCOREUPDATE = 3;
 
 var MAX_PEER = 2;
 var CURR_PTR = 0;
@@ -126,7 +127,24 @@ function onData(msg){
 		console.log('received projectile to destroy:' + msg.data);
 		p  = getProjectileById(msg.data).destroy();
 		opscore = msg.myscore;
-	};
+		if (msg.projtype == CACTUSEFFECT){
+			score--;
+			if (score<0) score = 0;
+			
+			doFunction(function(c){
+			var msg = {
+			type: SCOREUPDATE,
+			newscore: score,
+		};
+		c.send(msg);
+	});
+			
+		}
+		
+	} else if (msg.type == SCOREUPDATE){
+		console.log('received new score:' + msg.newscore);
+		opscore = msg.newscore;
+	}
 	
 
 };

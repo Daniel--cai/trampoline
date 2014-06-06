@@ -80,17 +80,17 @@
 		this.type = type;
 		this.x = x;
 		this.y = y;
-		if (type == 1 ) {
-			this.sprite = coin;
+		if (type == COIN ) {
+			this.sprite = coinsprite;
 			this.w = 50;
 			this.h = 50;
 		}
-		if (type == 2 ) { 
+		if (type == GEM ) { 
 			this.sprite = gem;
 			this.w = 50;
 			this.h = 45;
 		}
-		if (type == 3 ) {
+		if (type == CACTUS ) {
 			this.sprite = cactus;
 			this.w = 50;
 			this.h = 65;
@@ -118,29 +118,41 @@
 		for (var i = 0; i<Collectible.length; i++){	
 			var h = hero;	
 			var m = Collectible[i];
-			//if (h.player == playernumber) continue;
-			//hit distance between centre is than sum of half of their width/height
-			
-			var dist = Math.sqrt((h.x - m.x)*(h.x - m.x) + (h.y - m.y)*(h.y - m.y));
-			var horiz = (h.w+m.w)/2
 			var vert  =(h.h+m.h)/2;
-			if (dist < horiz || dist < vert){
-				if (m.type == 1 ){
+			if (CheckCollision(hero, m)){
+				if (m.type == COIN ){
 					coins++;
-				} else if (m.type == 2 ) {
+					if (upgrades[abundanceindex]){ 
+						coins++ 
+						console.log('abundance effect');
+					};
+				} else if (m.type == GEM ) {
 					score++;
-				} else if (m.type == 3 ) {
+					if (upgrades[treasure]) {
+						score += 2
+						console.log('treasure effect');
+					};
+				} else if (m.type == CACTUS ) {
 					//bomb;
 					score -= 2;
 					if (score <0) score = 0;
-				}
+					if (upgrades[bargainindex]) {
+						coins++
+						console.log('bargain effect');
+					};
+					if (upgrades[cactusbombindex]){
+						m.type = CACTUSEFFECT;
+						console.log('cactus effect');
+					}
+				}	
 				
-				console.log('sneding score: ' +score + ' ' +m.id);
+				console.log('sneding score: ' +score + ' ' + coins +' ' +m.id);
 				doFunction(function(c){
 					var msg = {
 						type: PROJECTILE,
 						data: m.id,
 						myscore: score,
+						projtype: m.type,
 					};
 					c.send(msg);
 				});
