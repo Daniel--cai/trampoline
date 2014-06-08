@@ -2,6 +2,7 @@ var CONNECTION = 0;
 var POSITION = 1;
 var PROJECTILE = 2;
 var SCOREUPDATE = 3;
+var SPAWN = 4;
 
 var MAX_PEER = 2;
 var CURR_PTR = 0;
@@ -144,6 +145,12 @@ function onData(msg){
 	} else if (msg.type == SCOREUPDATE){
 		console.log('received new score:' + msg.newscore);
 		opscore = msg.newscore;
+	} else if (msg.type == SPAWN) {
+		
+		if (playernumber == 2){
+			console.log('spawning object at location' + msg.handleid + ' '+ msg.projtype+' '+ msg.swidth,+ ' ' +msg.sheight + ' '+ msg.sdir );
+			var spawn = new Projectile(msg.handleid,msg.projtype, msg.swidth,msg.sheight,msg.sdir);
+		}
 	}
 	
 

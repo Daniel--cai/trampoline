@@ -109,13 +109,15 @@ function setfocus(button){
 
 function brick(){
 	if (!upgrades[brickindex]){
-		//weight += 3;
+		weight += 4;
 		textdesc = "Cheap weights. Cost 1 coin";
+	} else {
+		textdesc = "Cheap weights. Cost 1 coin (Purchased)"
 	}
 }
 function unbrick(){
 	if (!upgrades[brickindex]){
-		//weight -= 3;
+		weight -= 4;
 	}
 }
 var brickindex = 1;
@@ -140,6 +142,8 @@ function airglide(){
 		turnrate += 50;
 		//weight+= 3;
 		textdesc = "Swim faster in the air. Cost 2 coin. Weighs 3";
+	} else {
+		textdesc = "Swim faster in the air. Cost 2 coin. Weighs 3 (Purchased)";
 	}
 }
 function unairglide(){
@@ -171,6 +175,8 @@ function bungee(){
 	if (!upgrades[bungeeindex]){
 		bungerate += 300;
 		textdesc = "Springs up after each bounce. Cost 2 coin. Weighs 2.";
+	} else {
+		textdesc = "Springs up after each bounce. Cost 2 coin. (Purchased)";
 	}
 }
 function unbungee(){
@@ -202,7 +208,9 @@ function supersize(){
 		hero.w *= 1.5;
 		hero.h *= 1.5;
 		//weight+= 3;
-		textdesc = "Supersize me plz. Cost 3 coin. Weighs 3";
+		textdesc = "Supersize me plz. Cost 3 coin.";
+	} else {
+		textdesc = "Supersize me plz. Cost 3 coin. (Purchased)"
 	}
 }
 
@@ -219,6 +227,8 @@ function dosupersize(){
 	if (coins >= 1 && !upgrades[supersizeindex]){
 		textdesc = "Supersize me plz. (Purchased)"
 		upgrades[supersizeindex] = 1;;
+		realw = hero.w;
+		realh = hero.h;
 		console.log('bought! supersize');
 		coins -= 1;;
 	} else if (coins < 1 && !upgrades[supersizeindex]){
@@ -230,7 +240,11 @@ function dosupersize(){
 var parasolindex = 5;
 function parasol(){
 	//upgrades[parasolindex] = 1;;
-	textdesc = "Slow down your fall rate, use Space to toggle. Cost 3 coin. Weighs 3";
+	if (!upgrades[parasolindex]){
+	textdesc = "Slow down your fall rate, use Space to toggle. Cost 3 coin.";
+	} else {
+		textdesc = "Slow down your fall rate, use Space to toggle. Cost 3 coin. (Purchased)";
+	}
 }
 
 function doparasol(){
@@ -253,7 +267,11 @@ window.onSpacebar(function (){
 
 var cactusbombindex = 6;
 function cactusbombs(){
+	if (!upgrades[cactusbombindex]){
 	textdesc = "Cactus you collect now pricks the other player. Costs 4 coins";
+	} else {
+		textdesc = "Cactus you collect now pricks the other player. Costs 4 coins (Purchased)";
+	}
 }
 
 function docactusbombs(){
@@ -267,7 +285,11 @@ function docactusbombs(){
 
 var bargainindex = 7;
 function bargain(){
-	textdesc = "Collecting Cactus gives an additional 1 Coin. Costs 5 coins";
+	if (!upgrades[bargainindex]){
+		textdesc = "Collecting Cactus gives an additional 1 Coin. Costs 5 coins";
+	} else {
+		textdesc = "Collecting Cactus gives an additional 1 Coin. Costs 5 coins. Purchased";
+	}
 }
 
 function dobargain(){
@@ -313,7 +335,11 @@ function doblingbling(){
 abundanceindex = 10;
 
 function abundance(){
-	textdesc = "Collecting coins now give you 2 coins instead of 1";
+	if (!upgrades[abundanceindex]){
+		textdesc = "Collecting coins now give you 2 coins instead of 1";
+	} else {
+		textdesc = "Collecting coins now give you 2 coins instead of 1. (Purchased)";
+	}
 }
 
 function doabundance(){

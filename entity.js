@@ -73,13 +73,15 @@
 			render(enemyhero,enemyhero.sprite);
 	}
 
-	function Projectile(id, type,x,y){
+	function Projectile(id, type,x,y,dir){
 		//this.id = HandleId++;
 		//CollectibleCount++;
 		this.id = id;
 		this.type = type;
 		this.x = x;
 		this.y = y;
+		this.dir = dir;
+		console.log('new object spawned with dir '  + dir);
 		if (type == COIN ) {
 			this.sprite = coinsprite;
 			this.w = 50;
@@ -98,6 +100,7 @@
 		Collectible.push(this);
 	}
 
+
 	function getProjectileById(id){
 		for (var i = 0; i<Collectible.length; i++){	
 			if (Collectible[i].id == id)
@@ -109,7 +112,19 @@
 	
 	function RenderProjectile(){
 		//console.log(Collectible.length);
-		for (var i = 0; i<Collectible.length; i++){	
+		var ms = 5;
+		for (var i = 0; i<Collectible.length; i++){
+			//move colletives in their direction
+			m = Collectible[i];
+			if (m.dir == LEFT){
+				m.x-= ms;
+				if (m.x <= 0) m.dir = RIGHT;
+			} else if (m.dir == RIGHT){
+				m.x+= ms;
+				if (m.x >= canvaswidth) m.dir = LEFT;
+			} else {
+				console.log('proj has no dir')
+			}
 			render(Collectible[i],Collectible[i].sprite);		
 		}
 	}
@@ -126,12 +141,16 @@
 						coins++ 
 						console.log('abundance effect');
 					};
+					ding.currentTime = 0;
+					ding.play()
 				} else if (m.type == GEM ) {
 					score++;
 					if (upgrades[treasure]) {
 						score += 2
 						console.log('treasure effect');
 					};
+					ding.currentTime = 0;
+					ding.play();
 				} else if (m.type == CACTUS ) {
 					//bomb;
 					score -= 2;
@@ -144,6 +163,8 @@
 						m.type = CACTUSEFFECT;
 						console.log('cactus effect');
 					}
+					outaudio.currentTime = 0;
+					outaudio.play()
 				}	
 				
 				console.log('sneding score: ' +score + ' ' + coins +' ' +m.id);
@@ -161,6 +182,11 @@
 		}
 	}
 
+	function clearAll(){
+		Collectible = [];
+		ProjHandleId = 0;
+	}
+	
 	Projectile.prototype = {			
 		destroy: function(){
 			position = Collectible.indexOf(this);
@@ -175,6 +201,7 @@
 	window.checkObjectCollision = checkObjectCollision;
 	window.RenderProjectile= RenderProjectile;
 	window.getProjectileById = getProjectileById;
+	window.clearAll = clearAll;
 
 })();
 	

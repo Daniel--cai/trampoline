@@ -40,8 +40,47 @@ var context;
 var then;
 var playernumber = 0;
 var hero;
-var roundover = true;
+var roundover = false;
 var imagerdy = false;
+
+
+var RIGHT = 0;
+var LEFT = 1;
+
+var ProjHandleId = 0;
+
+var spawnObjectsPlayer1 = function(){
+	if (playernumber == 1){
+		console.log('spawning new proj');
+		var spawnheight = Math.round((Math.random() * (canvasheight-300))+150);
+		var spawndir = LEFT;
+		if (Math.round(Math.random()*100) > 50){
+			spawndir = RIGHT;
+		}
+		var spawnwidth = spawndir * canvaswidth;
+		var spawntype = Math.random() * 100;
+		var spawn;
+		ProjHandleId++;
+		if (spawntype < 10)
+			spawn = new Projectile(ProjHandleId,CACTUS, spawnwidth,spawnheight,spawndir);
+		else if (spawntype < 55)
+			spawn = new Projectile(ProjHandleId,GEM, spawnwidth,spawnheight,spawndir);
+		else 
+			spawn= new Projectile(ProjHandleId,COIN, spawnwidth,spawnheight,spawndir);
+			
+		doFunction(function(c){
+			var msg = {
+			type: SPAWN,
+			handleid: spawn.id,
+			projtype:spawn.type,
+			swidth: spawn.x,
+			sheight:spawn.y,
+			sdir:spawn.dir
+		};
+		c.send(msg);
+	});
+	}
+}
 
 var init = function() {
 
@@ -79,10 +118,12 @@ var init = function() {
 
 	then = Date.now();
 	setTimeout(roundtimerfunc, 1000);
+	setTimeout(spawnTimer, ((roundtimer/30)*1000) + 1000)
 	main();
 
 }
-roundtimer = 90;
+
+roundtimer = 30;
 var roundtimerfunc = function(){
 	roundtimer--;
 	console.log(roundtimer);
@@ -90,6 +131,7 @@ var roundtimerfunc = function(){
 		if (roundtimer <= 0) {
 			roundover = true;
 			roundtimer = 20;
+			clearAll();
 		}
 		setTimeout(roundtimerfunc, 1000);
 
@@ -101,6 +143,13 @@ var roundtimerfunc = function(){
 		}
 		setTimeout(roundtimerfunc, 1000);
 	}
+}
+
+var spawnTimer = function(){
+	if (!roundover){
+		spawnObjectsPlayer1();
+	}
+	setTimeout(spawnTimer, roundtimer/30*1500);
 }
 
 resources.onReady(function(){
@@ -167,14 +216,6 @@ var COIN = 2
 var CACTUS = 3;
 var CACTUSEFFECT = 4;
 
-var objects = 50;
-for (objs = 0; objs < objects ; objs += 3){
-	var coisfn = new Projectile(objs,COIN, 500,550);
-	var gsfde = new Projectile(objs+1,CACTUS, 600,300);
-	var sdf= new Projectile(objs+2,GEM, 600,600);
-}
-
-
 function CheckCollision(o1, o2){
 	if (!o1 && !o2){
 		o1 = hero;
@@ -197,11 +238,12 @@ function CheckCollision(o1, o2){
 var audio = new Audio('assets/boing.m4a');
 var outaudio = new Audio('assets/switch.mp3');
 var bgaudio = new Audio('assets/caketown.mp3');
+var ding = new Audio('assets/ding.mp3');
 audio.volume = 0.1;
 outaudio.volume = 0.2;
 audio.volume = 0.1;
 outaudio.volume = 0.2;
-bgaudio.volume = 0.05;
+bgaudio.volume = 0.1;
 var bgstart = false;
 
 var update = function(){	
